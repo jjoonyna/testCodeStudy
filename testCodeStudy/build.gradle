@@ -25,5 +25,8 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        includeTags 'fast', 'fast2' //테스트 할 태그 지정
+        excludeTags 'slow' //테스트 제외할 태그 지정
+    }
 }
