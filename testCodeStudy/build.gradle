@@ -20,13 +20,15 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.assertj:assertj-core:3.24.2'
 }
 
 tasks.named('test') {
-    useJUnitPlatform {
+    useJUnitPlatform ()
+    /* 아래 내용 사용할시 useJUnitPlatform () 대신 useJUnitPlatform {}사용
+    {
         includeTags 'fast', 'fast2' //테스트 할 태그 지정
         excludeTags 'slow' //테스트 제외할 태그 지정
     }
+    */
 }
