@@ -5,7 +5,9 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.AggregateWith;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
@@ -21,18 +23,33 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+//테스트는 각 테스트마다 인스턴스 값이 다르다
+//단위 테스트는 각각의 테스트에 영향을 끼치지 않는다
+//TestInstance와 TestMethodOrder를 사용시 각각의 테스트에 순서를 정하고 서로 영향을 끼칠 수 있다
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) //이 클래스의 모든 테스트 메서드가 하나의 인스턴스를 공유해주도록 한다 <-사용시 @BeforeAll이나 @AfterAll이 static일 필요가 없다
+//@ExtendWith(FindSlowTestExtension.class) //test 실행이 늦는 메서드를 찾는 클래스 등록(찾는 클래스는 직접 생성함)
 class StudyTest {
 
+    int value = 1;
+
+    //@ExtendWith과 동일 기능
+    @RegisterExtension
+    static FindSlowTestExtension findSlowTestExtension = new FindSlowTestExtension(1000L);
 
     //단순 반복 테스트
+    @Order(2) // 순서 지정
     @DisplayName("공부해라")
     @RepeatedTest(value = 10, name = "{displayName} {currentRepetition}/{totalRepetitions}")
     void repeatTest(RepetitionInfo repetitionInfo) {
+        System.out.println(this);
+        System.out.println(value++);
         //RepetitionInfo는 반복하는 테스트의 정보 확인이 가능하다
         System.out.println("Create study"+repetitionInfo.getCurrentRepetition()+"/"+repetitionInfo.getTotalRepetitions());
     }
 
     //인자를 넣어서 하는 테스트
+    @Order(3)
     @DisplayName("채용공고")
     @ParameterizedTest(name = "{index} {displayName} message={0}")
     @ValueSource(strings = {"취업하기가", "많이", "힘들어지고", "있네요"}) //원하는 인자들을 넣어준다
@@ -41,9 +58,11 @@ class StudyTest {
     //@NullAndEmptySource //널과 비어있는 인자를 넣어준다
     void parameterizedTest(String message){
         System.out.println(message);
+        System.out.println(this);
     }
 
     //인자 변환해서 넣어 테스트
+    @Order(4)
     @DisplayName("다른 인자 테스트")
     @ParameterizedTest(name = "{index} {displayName} message={0}")
     @ValueSource(ints = {10, 20, 40})
@@ -53,22 +72,22 @@ class StudyTest {
 
     //다른 타입으로 변환 시켜주는 클래스
     static class StudyConverter extends SimpleArgumentConverter {
-
         @Override
         protected Object convert(Object source, Class<?> targetType) throws ArgumentConversionException {
             assertEquals(Study.class, targetType, () -> "Study만 convert 가능");
             return new Study(Integer.parseInt(source.toString()));
         }
     }
-
+    @Order(5)
     @DisplayName("생성자 인자 테스트")
     @ParameterizedTest(name = "{index} {displayName} message={0}")
     @CsvSource({"10, '자바스터디'", "20, 스프링"})
-    void parameterizedTest3(Integer limit, String name){
+    void parameterizedTest3(Integer limit, String name) throws InterruptedException {
         System.out.println(new Study(limit, name));
     }
 
     //위와 동일한 다른 방법
+    @Order(6)
     @DisplayName("생성자 인자 테스트2")
     @ParameterizedTest(name = "{index} {displayName} message={0}")
     @CsvSource({"10, '자바스터디'", "20, 스프링"})
@@ -76,14 +95,15 @@ class StudyTest {
         System.out.println(study);
     }
 
-    static class StudyAggregator implements ArgumentsAggregator{
 
+    static class StudyAggregator implements ArgumentsAggregator{
         @Override
         public Object aggregateArguments(ArgumentsAccessor accessor, ParameterContext context) throws ArgumentsAggregationException {
             return new Study(accessor.getInteger(0), accessor.getString(1));
         }
     }
 
+    @Order(1)
     @Test
     @DisplayName("스터디 만들기")
     @EnabledOnOs(OS.WINDOWS) //해당 OS에서만 테스트 실행, OS가 아닌 JRE로 할경우 자바버전으로 조건 설정
@@ -92,7 +112,7 @@ class StudyTest {
     @FastTest
     void create(){
 
-        Study study = new Study(10);
+        Study study = new Study(value++);
 
         //AssertJ 라이브러리 추가해서 사용
         //값이 0보다 큰지 확인
@@ -131,14 +151,15 @@ class StudyTest {
         );
 */
 
-
     }
 
-    @Test
+    @Order(1)
+    @SlowTest
     //@Disabled //해당 어노테이션있는 테스트는 실행하지 않는다
     //@DisabledOnOs(OS.WINDOWS) //해당 OS에서 테스트 제외
     @Tag("slow")
-    void create1(){
+    void create1() throws InterruptedException {
+        Thread.sleep(1005L);
         System.out.println("create1");
     }
 
