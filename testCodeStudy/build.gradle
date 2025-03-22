@@ -21,6 +21,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.assertj:assertj-core:3.24.2'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+
 }
 
 tasks.named('test') {
@@ -31,4 +38,6 @@ tasks.named('test') {
         excludeTags 'slow' //테스트 제외할 태그 지정
     }
     */
+    //Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended 경고 뜰시 추가
+    jvmArgs '-Xshare:off'
 }
