@@ -19,9 +19,21 @@ public class StudyService {
         this.memberService = memberService;
         this.studyRepository = studyRepository;
     }
+
     public Study createNewStudy(Long memberId, Study study) {
         Optional<Member> member = memberService.findById(memberId);
         study.setOwnerId(member.orElseThrow(() -> new IllegalArgumentException("Member is null")).getId());
-        return studyRepository.save(study);
+
+        Study newStudy = studyRepository.save(study);
+        memberService.notify(newStudy);
+        //memberService.notify(member.get());
+        return newStudy;
+    }
+
+    public Study openStudy(Study study) {
+        study.open();
+        Study openedStudy = studyRepository.save(study);
+        memberService.notify(openedStudy);
+        return openedStudy;
     }
 }
