@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: testCodeStudy
+  jpa:
+    properties:
+      hibernate:
+        ddl-auto: update
+        format_sql: true
+        use_sql_comments: true
+        default_batch_fetch_size: 100
+    open-in-view: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/study
+    username: study
+    password: study
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+server:
+  url: "http://localhost"
+  port: 80
+  servlet:
+    encoding:
+      force-response: true

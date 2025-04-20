@@ -1,0 +1,14 @@
+
+
+spring:
+# url에는 tc를 작성해주고 localhost나 username, password는 필요없다
+# driver-class-name 또한 아래의 것으로 해주어야 한다
+  datasource:
+    url: jdbc:tc:mysql:///studytest
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect

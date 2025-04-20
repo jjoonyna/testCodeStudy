@@ -4,31 +4,64 @@ import com.example.testcodestudy.domain.Member;
 import com.example.testcodestudy.domain.Study;
 import com.example.testcodestudy.domain.StudyStatus;
 import com.example.testcodestudy.member.MemberService;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.BDDMockito;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest //테스트 할 객체에 빈을 등록해주기 위해 필요
+//@ExtendWith(MockitoExtension.class) //모키토를 사용할수 있게 확장해주는 어노테이션 단 SpringBootTest 어노테이션 있을시 필요 없음
+@ActiveProfiles("test")
+@Testcontainers //테스트 컨테이너 사용하기 위해 필요
 class StudyServiceTest {
 
     @Mock //객체를 생성해주는 어노테이션, 주로 구현체가 없는 인터페이스를 객체를 만들어 테스트할때 사용
     MemberService memberService;
 
+
+    @Autowired
+    StudyRepository studyRepository;
+
+    @Container // 컨테이너 사용한다는 어노테이션
+    private static MySQLContainer mySQLContainer= new MySQLContainer().withDatabaseName("studytest");
+
+    //매번 테스트 마다 레파지토리를 지운다(조금이라도 테스트를 빠르게 하기 위해)
+    @BeforeEach
+    void beforeEach() {
+        studyRepository.deleteAll();
+    }
+
+
+    /*@BeforeAll
+    static void beforeAll() {
+        mySQLContainer.start();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        mySQLContainer.stop();
+    }*/
+
     @Test
     //한 메서드 안에서만 쓰는 목 객체를 만들 경우 테스트할 메서드의 파라미터 값에 넣어주면 된다
-    void createStudyService(@Mock StudyRepository studyRepository) {
+    void createStudyService() {
 
         StudyService studyService = new StudyService(memberService, studyRepository);
         assertNotNull(studyService);
@@ -37,6 +70,14 @@ class StudyServiceTest {
         member.setId(1L);
         member.setEmail("haha@gmail.com");
 
+        Study study = new Study(10, "test");
+
+        given(memberService.findById(anyLong())).willReturn(Optional.of(member));
+
+        studyService.createNewStudy(1L, study);
+
+        assertEquals(1L, study.getOwnerId());
+        then(memberService).should(times(1)).notify(study);
 /*
         //memberService.findById(1L)가 호출되면 Optional.of(member)리턴
         Mockito.when(memberService.findById(1L)).thenReturn(Optional.of(member));
@@ -71,9 +112,11 @@ class StudyServiceTest {
         assertEquals(Optional.empty(), memberService.findById(3L));
 */
 
+/*
+        Study study = new Study(10, "java");
+
         Mockito.when(memberService.findById(1L)).thenReturn(Optional.of(member));
 
-        Study study = new Study(10, "java");
         when(studyRepository.save(study)).thenReturn(study);
         studyService.createNewStudy(1L, study);
 
@@ -81,7 +124,8 @@ class StudyServiceTest {
         verify(memberService, times(1)).notify(study);
 
         //더이상 memberService에서 액션이 일어나지 않아야할때 확인
-        verifyNoMoreInteractions(memberService);
+        //verifyNoMoreInteractions(memberService);
+
         verify(memberService, times(1)).notify(member);
 
         //vallidate는 전혀 호출되지 않았는지 확인
@@ -91,7 +135,7 @@ class StudyServiceTest {
         InOrder inOrder = Mockito.inOrder(memberService);
         inOrder.verify(memberService).notify(study);
         inOrder.verify(memberService).notify(member);
-
+*/
 
 
 
@@ -99,17 +143,15 @@ class StudyServiceTest {
 
     @DisplayName("연습문제")
     @Test
-    void openStudy(@Mock StudyRepository studyRepository){
+    void openStudy(){
         //Given
         StudyService studyService = new StudyService(memberService, studyRepository);
-        Study study = new Study(10, "테스트");
+        Study study = new Study(10, "test");
+        assertNull(study.getOpenedDateTime());
 
-        BDDMockito.given(studyRepository.save(study)).willReturn(study);
+        //BDDMockito.given(studyRepository.save(study)).willReturn(study);
         //위와 동일
         //when(studyRepository.save(study)).thenReturn(study);
-
-
-
 
         //When
         studyService.openStudy(study);
