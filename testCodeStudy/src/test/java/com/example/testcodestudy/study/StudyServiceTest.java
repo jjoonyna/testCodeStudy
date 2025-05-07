@@ -23,6 +23,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -30,6 +31,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.io.File;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,26 +61,31 @@ class StudyServiceTest {
     @Value("${container.port}")
     int port;
 
-    @Container // 컨테이너 사용한다는 어노테이션
+    //도커 컴포즈를 사용
+    @Container
+    static DockerComposeContainer composeContainer = new DockerComposeContainer(new File("src/test/resources/docker-compose.yml"))
+            .withExposedService("study-db", 3306);
+
+   /* @Container // 컨테이너 사용한다는 어노테이션
     private static MySQLContainer mySQLContainer= new MySQLContainer().withDatabaseName("studytest");
     //db를 직접 가져오는게 아니라 도커의 이미지를 가져와서 연결 가능
     static GenericContainer mysqlContainer= new GenericContainer("mysql")
             .withExposedPorts(3306)
-            .withEnv("MYSQL_DB", "studytest");
+            .withEnv("MYSQL_DB", "studytest");*/
 
             //Wait을 사용하여 해당 로그메세지, 포트, http 요청 이 있은후 사용하도록 대기
             /*.waitingFor(Wait.forHttp("/create"))
             .waitingFor(Wait.forLogMessage("안녕",1))
             .waitingFor(Wait.forListeningPort());*/
 
-    @BeforeAll
+    /*@BeforeAll
     static void beforeAll() {
         Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(log);
         mySQLContainer.followOutput(logConsumer);
-    }
+    }*/
 
     //매번 테스트 마다 레파지토리를 지운다(조금이라도 테스트를 빠르게 하기 위해)
-    @BeforeEach
+    /*@BeforeEach
     void beforeEach() {
         System.out.println(mySQLContainer.getMappedPort(3306));
         System.out.println("===========================");
@@ -86,7 +93,7 @@ class StudyServiceTest {
         System.out.println(port);
         studyRepository.deleteAll();
         System.out.println(mySQLContainer.getLogs());
-    }
+    }*/
 
 
     /*@BeforeAll
@@ -102,6 +109,9 @@ class StudyServiceTest {
     @Test
     //한 메서드 안에서만 쓰는 목 객체를 만들 경우 테스트할 메서드의 파라미터 값에 넣어주면 된다
     void createStudyService() {
+        System.out.println("===========================");
+        System.out.println(enviroment.getProperty("container.port"));
+        System.out.println(port);
 
         StudyService studyService = new StudyService(memberService, studyRepository);
         assertNotNull(studyService);
@@ -212,9 +222,12 @@ class StudyServiceTest {
 
         @Override
         public void initialize(ConfigurableApplicationContext applicationContext) {
-            mySQLContainer.start();
+            /*mySQLContainer.start();
             //container.port 프로퍼티 추가
             TestPropertyValues.of("container.port=" + mySQLContainer.getMappedPort(3306))
+                    .applyTo(applicationContext.getEnvironment());*/
+            composeContainer.start();
+            TestPropertyValues.of("container.port=" + composeContainer.getServicePort("study-db", 3306))
                     .applyTo(applicationContext.getEnvironment());
         }
     }
